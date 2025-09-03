@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+canvas {
+  touch-action: none; /* important for stylus/finger drawing */
+  user-select: none;
+}
