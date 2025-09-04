@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { socket } from "./utils/socket";
 import CanvasBoard from "./components/CanvasBoard";
+import Header from "./components/Header";
+import { EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
 
 function makeRoomId(len = 5) {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -11,11 +13,11 @@ function makeRoomId(len = 5) {
 
 export default function App() {
   const [roomId, setRoomId] = useState("");
-  const [status, setStatus] = useState("create a room");
   const [joinInput, setJoinInput] = useState("");
+  const [showHeader, setShowHeader] = useState(true);
 
   useEffect(() => {
-    const onJoined = ({ roomId }) => setStatus(`joined room - ${roomId}`);
+    const onJoined = ({ roomId }) => {};
     socket.on("joined", onJoined);
     return () => socket.off("joined", onJoined);
   }, []);
@@ -33,50 +35,35 @@ export default function App() {
     socket.emit("join-room", { roomId: id });
   };
 
-  const clearRoom = () => {
-    if (!roomId) return;
-    socket.emit("clear", { roomId });
+  const exitRoom = () => {
+    setRoomId("");
+    setJoinInput("");
   };
-
-  useEffect(() => {
-    setStatus(roomId ? `joined room - ${roomId}` : "create a room");
-  }, [roomId]);
 
   return (
     <div className="w-screen h-screen bg-neutral-900 text-white relative">
-      {/* Top bar controls */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-3 flex gap-2 items-center bg-black/40 backdrop-blur-sm">
-        <h1 className="font-semibold text-sm sm:text-base grow">
-          {status}
-        </h1>
-        <button
-          onClick={createRoom}
-          className="px-3 py-2 rounded bg-emerald-500 hover:bg-emerald-600 text-black text-sm font-semibold"
-          title="Create a new room with a short id"
-        >
-          Create Room
-        </button>
-        <input
-          value={joinInput}
-          onChange={(e) => setJoinInput(e.target.value)}
-          placeholder="Enter room ID"
-          className="px-3 py-2 rounded bg-white text-black w-28 sm:w-40 text-sm"
+      {/* Floating header */}
+      {showHeader && (
+        <Header
+          roomId={roomId}
+          joinInput={joinInput}
+          setJoinInput={setJoinInput}
+          createRoom={createRoom}
+          joinRoom={joinRoom}
+          exitRoom={exitRoom}
+          setShowHeader={setShowHeader}
         />
+      )}
+
+      {/* Toggle button when header hidden */}
+      {!showHeader && (
         <button
-          onClick={joinRoom}
-          className="px-3 py-2 rounded bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold"
+          onClick={() => setShowHeader(true)}
+          className="absolute top-4 right-4 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-white border border-gray-300 shadow-md"
         >
-          Join
+          <EllipsisHorizontalIcon className="w-6 h-6 text-blue-600" />
         </button>
-        <button
-          onClick={clearRoom}
-          className="px-3 py-2 rounded bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold"
-          disabled={!roomId}
-          title="Clear canvas for everyone in the room"
-        >
-          Clear
-        </button>
-      </div>
+      )}
 
       {/* Fullscreen canvas */}
       <CanvasBoard roomId={roomId} />

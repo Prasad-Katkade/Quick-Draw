@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = 4000;
 server.listen(PORT, () => {
   console.log(`QuickDraw server listening on http://localhost:${PORT}`);
 });
