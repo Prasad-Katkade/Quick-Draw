@@ -105,12 +105,7 @@ export default function App() {
             >
               Create Room
             </button>
-            <button
-              onClick={() => setShowModal(false)}
-              className="px-4 py-2 rounded-md border border-gray-300 text-gray-600 font-semibold"
-            >
-              No Thanks
-            </button>
+            
           </div>
         </Modal>
       )}

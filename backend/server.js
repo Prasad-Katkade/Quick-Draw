@@ -33,6 +33,7 @@ io.on("connection", (socket) => {
 
     socket.emit("joined", { roomId });
     socket.to(roomId).emit("peer-joined", { id: socket.id });
+      console.log(`socket ${socket.id} joined room ${roomId}`);
 
     // ✅ Update user count for everyone in room
     emitUserCount(roomId);
@@ -55,7 +56,22 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Other events like draw/clear remain the same
+  // Incoming drawing segments from one client -> broadcast to room peers
+  // payload: { roomId, strokeId, segments: [{x,y,t,pressure}], color, lineWidth }
+  socket.on("draw", (payload) => {
+    const { roomId } = payload;
+    console.log("got draw", payload);
+    if (!roomId) return;
+    // broadcast to everyone else in the room
+    socket.to(roomId).emit("draw", payload);
+  });
+
+  // Optional: clear canvas event
+  socket.on("clear", ({ roomId }) => {
+    if (!roomId) return;
+    socket.to(roomId).emit("clear");
+  });
+
 });
 
 
