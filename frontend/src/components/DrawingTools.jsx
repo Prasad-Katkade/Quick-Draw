@@ -1,18 +1,23 @@
 import React, { useState } from "react";
 import ToolIcon from "./ToolIcon";
 import { EllipsisHorizontalCircleIcon } from "@heroicons/react/24/solid";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEraser } from "@fortawesome/free-solid-svg-icons";
 
 const toolsData = [
-    { name: "eraser", icon: <span> E </span>, showDrawer: true },
-    { name: "pen", icon: <span> P </span>, showDrawer: true },
-    { name: "marker", icon: <span> M </span>, showDrawer: true },
+    { 
+        name: "eraser", 
+        icon: <FontAwesomeIcon icon={faEraser} className="text-gray-500" />, 
+        showDrawer: true 
+    },
+    { name: "pen", icon: <span>P</span>, showDrawer: true },
+    { name: "marker", icon: <span>M</span>, showDrawer: true },
 ];
 
 export default function DrawingTools() {
     const [openDrawer, setOpenDrawer] = useState(null);
 
     const handleClick = (toolName, showDrawer) => {
-        console.log(toolName);
         if (showDrawer) setOpenDrawer(openDrawer === toolName ? null : toolName);
     };
     const handleClose = () => {
