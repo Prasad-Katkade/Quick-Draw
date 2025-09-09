@@ -60,17 +60,20 @@ io.on("connection", (socket) => {
   // payload: { roomId, strokeId, segments: [{x,y,t,pressure}], color, lineWidth }
   socket.on("draw", (payload) => {
     const { roomId } = payload;
-    console.log("got draw", payload);
+    console.log("got draw");
     if (!roomId) return;
     // broadcast to everyone else in the room
     socket.to(roomId).emit("draw", payload);
   });
 
-  // Optional: clear canvas event
-  socket.on("clear", ({ roomId }) => {
-    if (!roomId) return;
-    socket.to(roomId).emit("clear");
-  });
+ // server.js (inside io.on('connection', (socket) => { ... }))
+socket.on("clear", () => {
+  const roomId = socket.data?.roomId;
+  if (!roomId) return;
+  console.log(`clear request from ${socket.id} in room ${roomId}`);
+  // broadcast to everyone in the room (including sender)
+  io.to(roomId).emit("clear", { userId: socket.id });
+});
 
 });
 

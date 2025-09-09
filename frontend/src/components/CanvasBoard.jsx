@@ -7,6 +7,7 @@ export default function CanvasBoard({ roomId }) {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
+  const strokesRef = useRef({});
 
   const [isDrawing, setIsDrawing] = useState(false);
   const lastPoint = useRef(null);
@@ -60,29 +61,40 @@ export default function CanvasBoard({ roomId }) {
   };
 
   const drawTo = (x, y) => {
-    const ctx = ctxRef.current;
-    if (!ctx || !isDrawing) return;
-    const p0 = lastPoint.current;
-    const p1 = { x, y };
+  const ctx = ctxRef.current;
+  if (!ctx || !isDrawing) return;
+  const p0 = lastPoint.current;
+  const p1 = { x, y };
 
-    ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(p0.x, p0.y);
+  ctx.lineTo(p1.x, p1.y);
+  ctx.stroke();
 
-    if (roomId) {
-      socket.emit("draw", {
-        roomId,
-        strokeId: strokeIdRef.current,
-        color: "#000000",
-        lineWidth: 4,
-        segments: [p0, p1],
-      });
-    }
+  // store locally under this user id
+  const myId = socket.id || "local";
+  if (!strokesRef.current[myId]) strokesRef.current[myId] = [];
+  strokesRef.current[myId].push({
+    segments: [p0, p1],
+    color: "#000000",
+    lineWidth: 4,
+  });
 
-    lastPoint.current = p1;
-    scrollToPoint(p1.x, p1.y);
-  };
+  if (roomId) {
+    socket.emit("draw", {
+      roomId,
+      strokeId: strokeIdRef.current,
+      color: "#000000",
+      lineWidth: 4,
+      segments: [p0, p1],
+      userId: myId,
+    });
+  }
+
+  lastPoint.current = p1;
+  scrollToPoint(p1.x, p1.y);
+};
+
 
   const end = () => {
     setIsDrawing(false);
@@ -194,27 +206,69 @@ export default function CanvasBoard({ roomId }) {
   }, [isDrawing]);
 
   // --- handle incoming strokes ---
-  useEffect(() => {
-    const onDraw = (payload) => {
-      const { segments, color, lineWidth } = payload;
-      const ctx = ctxRef.current;
-      if (!ctx || !segments?.length) return;
+  // update onDraw listener:
+useEffect(() => {
+  const onDraw = (payload) => {
+    const { segments, color, lineWidth, userId } = payload;
+    const ctx = ctxRef.current;
+    if (!ctx || !segments?.length) return;
 
-      ctx.save();
-      ctx.strokeStyle = color || "#000000";
-      ctx.lineWidth = lineWidth || 4;
-      ctx.beginPath();
-      ctx.moveTo(segments[0].x, segments[0].y);
-      ctx.lineTo(segments[1].x, segments[1].y);
-      ctx.stroke();
-      ctx.restore();
+    // store stroke under the sender's id
+    const uid = userId || "remote";
+    if (!strokesRef.current[uid]) strokesRef.current[uid] = [];
+    strokesRef.current[uid].push({ segments, color, lineWidth });
 
-      scrollToPoint(segments[1].x, segments[1].y);
-    };
+    // draw the segment
+    ctx.save();
+    ctx.strokeStyle = color || "#000000";
+    ctx.lineWidth = lineWidth || 4;
+    ctx.beginPath();
+    ctx.moveTo(segments[0].x, segments[0].y);
+    ctx.lineTo(segments[1].x, segments[1].y);
+    ctx.stroke();
+    ctx.restore();
 
-    socket.on("draw", onDraw);
-    return () => socket.off("draw", onDraw);
-  }, []);
+    scrollToPoint(segments[1].x, segments[1].y);
+  };
+
+  const redrawAll = () => {
+    // reinitialize canvas (grid + white bg)
+    initCanvas();
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+
+    Object.values(strokesRef.current).forEach((userStrokes) => {
+      userStrokes.forEach((stroke) => {
+        const s = stroke.segments;
+        if (!s || s.length < 2) return;
+        ctx.save();
+        ctx.strokeStyle = stroke.color || "#000000";
+        ctx.lineWidth = stroke.lineWidth || 4;
+        ctx.beginPath();
+        ctx.moveTo(s[0].x, s[0].y);
+        ctx.lineTo(s[1].x, s[1].y);
+        ctx.stroke();
+        ctx.restore();
+      });
+    });
+  };
+
+  const onClear = ({ userId }) => {
+    console.log("Received clear event for user:", userId); // check browser console
+    if (!userId) return;
+    delete strokesRef.current[userId];
+    redrawAll();
+  };
+
+  socket.on("draw", onDraw);
+  socket.on("clear", onClear);
+
+  return () => {
+    socket.off("draw", onDraw);
+    socket.off("clear", onClear);
+  };
+}, []);
+
 
   return (
     <div

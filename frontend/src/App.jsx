@@ -4,6 +4,7 @@ import CanvasBoard from "./components/CanvasBoard";
 import Header from "./components/Header";
 import Modal from "./components/Modal";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
+import DrawingTools from "./components/DrawingTools";
 
 function makeRoomId(len = 5) {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -84,6 +85,9 @@ export default function App() {
 
       {/* Fullscreen canvas */}
       <CanvasBoard roomId={roomId} />
+
+       {/* Drawing Tools - floating bottom center */}
+      <DrawingTools />
 
       {/* Modal for room doesn't exist */}
       {showModal && (
