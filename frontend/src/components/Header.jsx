@@ -4,17 +4,14 @@ import {
     UserGroupIcon,
     ShareIcon,
 } from "@heroicons/react/24/solid";
+import { useRoomContext } from "../context/RoomContext";
 
 export default function Header({
-    roomId,
-    joinInput,
-    setJoinInput,
-    createRoom,
-    joinRoom,
-    exitRoom,
+
     setShowHeader,
-    userCount
+
 }) {
+    const { roomId, joinInput, setJoinInput, createRoom, joinRoom, exitRoom, userCount } = useRoomContext();
     return (
         <div className="absolute top-0 left-0 right-0 z-20 flex justify-center p-3">
             <div className="bg-white border border-gray-300 rounded-md shadow-lg p-4 w-full max-w-md">
